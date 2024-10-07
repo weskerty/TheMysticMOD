@@ -1,10 +1,9 @@
-const { exec } = require('child_process');
-
+import { exec } from 'child_process';
 
 function runCommand(command, description) {
   return new Promise((resolve, reject) => {
     console.log(`Ejecutando: ${description}...`);
-    
+
     exec(command, (error, stdout, stderr) => {
       if (error) {
         console.error(`Error al ejecutar ${description}:`, error);
@@ -20,12 +19,12 @@ function runCommand(command, description) {
   });
 }
 
-// Instalar módulos de Python
+// Agregar mas lineas para mas paquetes
 async function installPythonDependencies() {
   try {
-    await runCommand('pip install -U --pre "yt-dlp[default]"', 'Instalando yt-dlp');
+    await runCommand('python3 -m pip install -U --pre "yt-dlp[default]"', 'Instalando YT-DLP');
   } catch (error) {
-    console.error('Error en Modulos Opcionales, Algunos Plugins pueden no Funcionar.', error);
+    console.error('Error Instalando Modulos Opcionales, Algunos Plugins No Funcionaran.', error);
   }
 }
 
