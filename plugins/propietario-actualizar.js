@@ -7,8 +7,9 @@ const handler = async (m, { conn, text }) => {
   const _translate = JSON.parse(fs.readFileSync(`./src/languages/${idioma}.json`));
   const tradutor = _translate.plugins.propietario_actualizar;
 
+  await conn.reply(m.chat, 'Comprobando...', m);
+
   try {
-    // Ejecutar git pull
     const stdout = execSync('git pull' + (m.fromMe && text ? ' ' + text : ''));
     let messager = stdout.toString();
     
@@ -18,15 +19,11 @@ const handler = async (m, { conn, text }) => {
     
     if (messager.includes('Updating')) {
       messager = tradutor.texto2 + stdout.toString();
-      const outdated = execSync('npm outdated').toString();
 
-      if (outdated) {
-        conn.reply(m.chat, "Actualizando...", m);
-        execSync('npm install');
-        conn.reply(m.chat, "utd.", m);
-      }
+      await conn.reply(m.chat, 'Ejecutando NPM Install', m);
+      execSync('npm install --force');
     }
-    
+
     conn.reply(m.chat, messager, m);
   } catch {
     try {
@@ -43,7 +40,6 @@ const handler = async (m, { conn, text }) => {
             return '*→ ' + line.slice(3) + '*';
           })
           .filter(Boolean);
-
         if (conflictedFiles.length > 0) {
           const errorMessage = `${tradutor.texto3} \n\n${conflictedFiles.join('\n')}.*`;
           await conn.reply(m.chat, errorMessage, m);
@@ -62,4 +58,5 @@ const handler = async (m, { conn, text }) => {
 
 handler.command = /^(update|actualizar|gitpull)$/i;
 handler.rowner = true;
+
 export default handler;
