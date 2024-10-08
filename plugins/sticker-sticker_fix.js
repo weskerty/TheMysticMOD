@@ -126,7 +126,7 @@ async function mp4ToWebp(file, stickerMetadata) {
         '--disable-offline-load-stale-cache',
         '--disk-cache-size=0'
       ],
-      executablePath: 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+      executablePath: 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe' // Claramente una Falla Fija. Requiere Puppeteer. REPARAR
     }
   };
 

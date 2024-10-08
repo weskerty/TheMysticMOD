@@ -31,10 +31,6 @@ const handler = async (m, { conn, usedPrefix }) => {
   const wm = 'MysticMOD';
   const info = ` ${tradutor.texto1[0]}
 
-  ${tradutor.texto1[1]} 
-  ${tradutor.texto1[2]} 
-  ${tradutor.texto1[3]} 
-
   ${tradutor.texto1[4]} ${rtime}
   ${tradutor.texto1[5]} ${uptime}
   ${tradutor.texto1[6]} ${usedPrefix}
