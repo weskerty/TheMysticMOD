@@ -3,8 +3,6 @@ import axios from 'axios';
 let previousCommitSHA = '';
 let previousUpdatedAt = '';
 let previousCommitUser = ''; 
-const owner = 'BrunoSobrino';
-const repo = 'TheMystic-Bot-MD';
 const handler = async (m, {conn, text, usedPrefix, command}) => {
   const datas = global
   const idioma = datas.db.data.users[m.sender].language || global.defaultLenguaje
@@ -15,7 +13,7 @@ const handler = async (m, {conn, text, usedPrefix, command}) => {
 try {
   async function checkRepoUpdates() {
     try {
-      const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`);
+      const response = await axios.get(`https://github.com/weskerty/TheMysticMOD/commits?per_page=1`);
       const {sha, commit: {message}, html_url, author: { login } } = response.data[0];
 
       if (sha !== previousCommitSHA || message !== previousUpdatedAt) {
