@@ -7,7 +7,7 @@ const handler = async (m, { conn, text }) => {
   const _translate = JSON.parse(fs.readFileSync(`./src/languages/${idioma}.json`));
   const tradutor = _translate.plugins.propietario_actualizar;
 
-  await conn.reply(m.chat, 'Comprobando...', m);
+  await conn.reply(m.chat, '⌛Comprobando...', m);
 
   try {
     const stdout = execSync('git pull' + (m.fromMe && text ? ' ' + text : ''));
@@ -20,7 +20,7 @@ const handler = async (m, { conn, text }) => {
     if (messager.includes('Updating')) {
       messager = tradutor.texto2 + stdout.toString();
 
-      await conn.reply(m.chat, 'Ejecutando NPM Install', m);
+      await conn.reply(m.chat, '⏳ Install', m);
       execSync('npm install --force');
     }
 
