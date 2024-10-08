@@ -2,6 +2,7 @@ import os from 'os';
 import { exec } from 'child_process';
 import fs from 'fs';
 
+// Función para formatear el uptime
 function formatUptime(uptime) {
   const seconds = Math.floor(uptime % 60);
   const minutes = Math.floor((uptime / 60) % 60);
@@ -9,6 +10,7 @@ function formatUptime(uptime) {
   return `${hours} horas, ${minutes} minutos, ${seconds} segundos`;
 }
 
+// Obtener las versiones de las herramientas instaladas
 function getVersions(callback) {
   exec('node -v', (err, nodeVersion) => {
     if (err) nodeVersion = '✖️';
@@ -38,31 +40,46 @@ function getLinuxInfo(callback) {
   });
 }
 
-function getStorageInfo() {
-  const diskInfo = [];
-  const drives = os.platform() === 'win32' ? 'wmic logicaldisk get size,freespace,caption' : 'df -h';
-  
-  exec(drives, (err, stdout) => {
-    if (err) {
-      console.error('Error al obtener la información de almacenamiento:', err);
-    } else {
-      diskInfo.push(stdout.trim());
-    }
-  });
-
-  return diskInfo;
+function getStorageInfo(callback) {
+  if (os.platform() === 'win32') {
+    exec('wmic logicaldisk get size,freespace,caption', (err, stdout) => {
+      if (err) return callback('Error al obtener la información de almacenamiento.');
+      
+      // Formatear la salida
+      const lines = stdout.trim().split('\n');
+      const storage = lines.slice(1).map(line => {
+        const [drive, free, total] = line.trim().split(/\s+/);
+        const totalGB = (total / (1024 ** 3)).toFixed(2) + ' GB';
+        const freeGB = (free / (1024 ** 3)).toFixed(2) + ' GB';
+        return `Unidad ${drive}: ${freeGB} libres de ${totalGB}`;
+      });
+      callback(storage.join('\n'));
+    });
+  } else {
+    exec('df -h', (err, stdout) => {
+      if (err) return callback('✖️');
+      
+      // Formatear la salida
+      const lines = stdout.trim().split('\n');
+      const storage = lines.slice(1).map(line => {
+        const parts = line.split(/\s+/);
+        return `Dispositivo ${parts[0]}: ${parts[3]} libres de ${parts[1]}`;
+      });
+      callback(storage.join('\n'));
+    });
+  }
 }
 
 function getBatteryInfo(callback) {
   if (os.platform() === 'win32') {
     exec('WMIC PATH Win32_Battery Get EstimatedChargeRemaining', (err, stdout) => {
-      if (err) return callback('Batería no disponible');
+      if (err) return callback('✖️');
       const battery = stdout.trim();
       callback(`Carga estimada: ${battery}%`);
     });
   } else {
     exec('upower -i $(upower -e | grep BAT) | grep percentage', (err, stdout) => {
-      if (err) return callback('Batería no disponible');
+      if (err) return callback('✖️');
       const battery = stdout.split(':')[1].trim();
       callback(`Carga estimada: ${battery}`);
     });
@@ -74,45 +91,45 @@ async function getSystemInfo(callback) {
     platform: os.platform(),
     cpuArch: os.arch(),
     cpus: os.cpus().length,
-    totalMemory: (os.totalmem() / (1024 ** 3)).toFixed(2) + ' GB', // Total RAM en GB
-    freeMemory: (os.freemem() / (1024 ** 3)).toFixed(2) + ' GB',   // RAM libre en GB
-    uptime: formatUptime(os.uptime()),                             // Tiempo de actividad
-    osVersion: os.release(),                                       // Versión del SO
-    loadAverage: os.loadavg().map(load => load.toFixed(2)).join(', ') // Carga promedio
+    totalMemory: (os.totalmem() / (1024 ** 3)).toFixed(2) + ' GB',
+    freeMemory: (os.freemem() / (1024 ** 3)).toFixed(2) + ' GB',
+    uptime: formatUptime(os.uptime()),
+    osVersion: os.release(),
+    loadAverage: os.loadavg().map(load => load.toFixed(2)).join(', ')
   };
 
   getVersions((versions) => {
     getLinuxInfo((linuxInfo) => {
       getBatteryInfo((batteryInfo) => {
-        const storageInfo = getStorageInfo();
+        getStorageInfo((storageInfo) => {
+          let infoMessage = `> *📊 Información del Sistema*\n\n`;
+          infoMessage += `- 🌐 *Plataforma*: _${systemInfo.platform}_\n`;
+          infoMessage += `- 💻 *Arquitectura CPU*: ${systemInfo.cpuArch}\n`;
+          infoMessage += `- 🧠 *Núcleos CPU*: ${systemInfo.cpus}\n`;
+          infoMessage += `- 🗄️ *Memoria Total*: ${systemInfo.totalMemory}\n`;
+          infoMessage += `- 🗃️ *Memoria Libre*: ${systemInfo.freeMemory}\n`;
+          infoMessage += `- ⏱️ *Tiempo de Actividad*: ${systemInfo.uptime}\n`;
+          infoMessage += `- 📀 *Versión del SO*: ${systemInfo.osVersion}\n`;
+          infoMessage += `- 📊 *Carga Promedio (1, 5, 15 min)*: ${systemInfo.loadAverage}\n\n`;
 
-        let infoMessage = `> *📊 Información del Sistema*\n\n`;
-        infoMessage += `- 🌐 *Plataforma*: _${systemInfo.platform}_\n`;
-        infoMessage += `- 💻 *Arquitectura CPU*: ${systemInfo.cpuArch}\n`;
-        infoMessage += `- 🧠 *Núcleos CPU*: ${systemInfo.cpus}\n`;
-        infoMessage += `- 🗄️ *Memoria Total*: ${systemInfo.totalMemory}\n`;
-        infoMessage += `- 🗃️ *Memoria Libre*: ${systemInfo.freeMemory}\n`;
-        infoMessage += `- ⏱️ *Tiempo de Actividad*: ${systemInfo.uptime}\n`;
-        infoMessage += `- 📀 *Versión del SO*: ${systemInfo.osVersion}\n`;
-        infoMessage += `- 📊 *Carga Promedio (1, 5, 15 min)*: ${systemInfo.loadAverage}\n\n`;
+          infoMessage += `> *🔋 Información de Batería*\n${batteryInfo}\n\n`;
 
-        infoMessage += `> *🔋 Batería*\n${batteryInfo}\n\n`;
+          infoMessage += `> *💾 Información de Almacenamiento*\n${storageInfo}\n\n`;
 
-        infoMessage += `> *💾 Almacenamiento*\n${storageInfo.join('\n')}\n\n`;
+          infoMessage += `> *🛠️ Versiones de Herramientas*\n\n`;
+          infoMessage += `- ☕ *Node.js*: ${versions.nodeVersion.trim()}\n`;
+          infoMessage += `- 📦 *NPM*: ${versions.npmVersion.trim()}\n`;
+          infoMessage += `- 🎥 *FFmpeg*: ${versions.ffmpegVersion.split('\n')[0]}\n`;
+          infoMessage += `- 🐍 *Python*: ${versions.pythonVersion.trim()}\n`;
+          infoMessage += `- 📦 *PIP*: ${versions.pipVersion.trim()}\n`;
+          infoMessage += `- 🍫 *Chocolatey*: ${versions.chocoVersion.trim()}\n\n`;
 
-        infoMessage += `> *🛠️ Version Herramientas*\n\n`;
-        infoMessage += `- ☕ *Node.js*: ${versions.nodeVersion.trim()}\n`;
-        infoMessage += `- 📦 *NPM*: ${versions.npmVersion.trim()}\n`;
-        infoMessage += `- 🎥 *FFmpeg*: ${versions.ffmpegVersion.split('\n')[0]}\n`; // Solo primera linea
-        infoMessage += `- 🐍 *Python*: ${versions.pythonVersion.trim()}\n`;
-        infoMessage += `- 📦 *PIP*: ${versions.pipVersion.trim()}\n`;
-        infoMessage += `- 🍫 *Chocolatey*: ${versions.chocoVersion.trim()}\n\n`;
+          if (os.platform() === 'linux') {
+            infoMessage += `> *🐧 Distribución Linux*\n${linuxInfo}\n`;
+          }
 
-        if (os.platform() === 'linux') {
-          infoMessage += `> *🐧 Distribución Linux*\n${linuxInfo}\n`;
-        }
-
-        callback(infoMessage);
+          callback(infoMessage);
+        });
       });
     });
   });
@@ -124,6 +141,6 @@ const handler = async (m, { conn }) => {
   });
 };
 
-handler.command = ['alive', 'host', 'info']
+handler.command = /^(sysinfo)$/i;
 
 export default handler;
