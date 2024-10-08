@@ -1,7 +1,17 @@
-import { BackgroundRemoval } from '@imgly/background-removal-node';
-import fs from 'fs';
-import uploadImage from '../src/libraries/uploadImage.js';
-import { sticker } from '../src/libraries/sticker.js';
+import { BackgroundRemoval } from '@imgly/background-removal-node'; 
+import fs from 'fs'; 
+import path from 'path'; 
+import { sticker } from '../src/libraries/sticker.js'; // remover
+
+
+const TempDirectory = path.join(process.cwd(), 'src/tmp/');
+
+
+const generateTempFileName = () => {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[-:.]/g, ''); /
+  return `temp-${timestamp}.png`;
+};
 
 const handler = async (m, { conn, text }) => {
   const datas = global;
@@ -10,26 +20,39 @@ const handler = async (m, { conn, text }) => {
   const tradutor = _translate.plugins.sticker_sremovebg;
 
   try {
-    const q = m.quoted ? m.quoted : m;
+    
+    await m.reply(tradutor.texto2 || 'Generando sticker...');
+
+    const q = m.quoted ? m.quoted : m; 
     const mime = (q.msg || q).mimetype || '';
-    const img = await q.download();
 
-    const imagePath = './tmp/image.png';
-    fs.writeFileSync(imagePath, img);
 
-    const outputPath = './tmp/removed-bg.png'; 
-    await BackgroundRemoval.fromFile(imagePath).toFile(outputPath);
+    if (!mime || !mime.startsWith('image/')) {
+      throw new Error(tradutor.texto1 || 'No se proporcionó una imagen válida');
+    }
 
-    const stickerr = await sticker(false, outputPath, global.packname, global.author);
+    const img = await q.download(); 
 
-    conn.sendFile(m.chat, stickerr, 'sticker.webp', '', m, { asSticker: true });
 
-    fs.unlinkSync(imagePath);
+    const inputPath = path.join(TempDirectory, generateTempFileName());
+    const outputPath = path.join(TempDirectory, generateTempFileName());
+
+
+    fs.writeFileSync(inputPath, img);
+
+    await BackgroundRemoval.fromFile(inputPath).toFile(outputPath);
+
+    const stickerResult = await sticker(false, outputPath, global.packname, global.author);
+
+    await conn.sendFile(m.chat, stickerResult, 'sticker.webp', '', m, { asSticker: true });
+
+    fs.unlinkSync(inputPath);
     fs.unlinkSync(outputPath);
 
   } catch (e) {
-    console.error(e);
-    m.reply(tradutor.texto1); 
+    console.error(e); 
+
+    await m.reply(`Error al generar el sticker: ${e.message || 'Error desconocido'}`);
   }
 };
 
