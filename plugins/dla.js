@@ -150,7 +150,7 @@ const sendDownloadedFile = (m, filePath) => {
     if (!err) {
       conn.sendMessage(m.chat, {
         document: { url: filePath },
-        mimetype: 'application/octet-stream',
+        mimetype: 'video/mp4',
         fileName: path.basename(filePath)
       }, { quoted: m }, () => {
         fs.unlink(filePath, (err) => { if (err) console.error(err); });
