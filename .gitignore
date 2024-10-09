@@ -5,6 +5,9 @@ jadibts
 pluginpilot
 plugins/supersecretlistener.js
 package-lock.json
+plugins/nv-global.js
+src/assets/audio
+
 
 # Local Databases
 src/glx/db/database.json
